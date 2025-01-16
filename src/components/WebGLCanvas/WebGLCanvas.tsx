@@ -1,16 +1,12 @@
 import React, { useRef } from "react";
-import styles from "./WebGLCanvas.module.css";
-import { useWebGL } from "../../hooks/useWebGL";
+import { useWebGL } from "../../hooks";
 
 const WebGLCanvas: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const { rendererRef, didLoad, initializationError } = useWebGL(canvasRef);
-  console.log(rendererRef, didLoad, initializationError);
+  useWebGL(canvasRef);
 
   return (
-    <div>
-      <canvas ref={canvasRef} className={styles.canvas}></canvas>
-    </div>
+      <canvas ref={canvasRef} width="800px" height="800px"></canvas>
   );
 };
 

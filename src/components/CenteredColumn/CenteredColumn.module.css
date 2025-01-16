@@ -1,16 +1,15 @@
 .centeredColumn {
-    width: 1000px;
-    margin: 0 auto; /* Center the column horizontally */
+    margin: 0 auto; 
     padding: 20px;
-    background-color: #1d1d1d; /* Light grey background for visibility */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Light shadow for depth */
+    background-color: #1d1d1d; 
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); 
     border-radius: 8px;
     border: solid #2d2d2d;
-    box-sizing: border-box; /* Include padding in the element's total width and height */
+    box-sizing: border-box; 
     display: flex;
     flex-direction: column;
-    height: 100%; /* Make the column take up the full height */
-    overflow: hidden; /* Prevent overflow from the column */
+    height: 100%; 
+    overflow: hidden; 
     margin-bottom: 20px;
   }
   
