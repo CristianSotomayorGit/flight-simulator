@@ -1,6 +1,6 @@
 import React, { useRef } from "react";
 import styles from "./WebGLCanvas.module.css";
-import { useWebGL } from "../../hooks/useWebGL";
+import { useWebGL } from "../../hooks";
 
 const WebGLCanvas: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -8,9 +8,9 @@ const WebGLCanvas: React.FC = () => {
   console.log(rendererRef, didLoad, initializationError);
 
   return (
-    <div>
-      <canvas ref={canvasRef} className={styles.canvas}></canvas>
-    </div>
+
+      <canvas ref={canvasRef} className={styles.canvas} width="1000px" height="1000px"></canvas>
+
   );
 };
 
