@@ -352,6 +352,13 @@ export class Renderer {
   private drawMapView() {
     if (!this.gl || !this.mainProgram) return;
 
+    const dpr = window.devicePixelRatio || 1; // Get device pixel ratio
+    const displayWidth = this.canvas.clientWidth; // CSS width
+    const displayHeight = this.canvas.clientHeight; // CSS height
+  
+    this.canvas.width = displayWidth * dpr;
+    this.canvas.height = displayHeight * dpr;
+
     this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
     this.gl.clearColor(0.15, 0.15, 0.15, 1.0);
     this.gl.clear(this.gl.COLOR_BUFFER_BIT);
@@ -395,8 +402,8 @@ export class Renderer {
   private drawMiniMapView() {
     if (!this.gl || !this.mainProgram) return;
 
-    const miniWidth = 300;
-    const miniHeight = 300;
+    const miniWidth = 250;
+    const miniHeight = 250;
     this.gl.viewport(0, 0, miniWidth, miniHeight);
 
     this.gl.useProgram(this.mainProgram);
