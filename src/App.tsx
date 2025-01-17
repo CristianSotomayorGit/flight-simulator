@@ -4,6 +4,7 @@ import { Compass, CenteredColumn, WebGLCanvas } from "./components";
 import { useWebGL } from "./hooks";
 import { useKeys } from "./hooks/useKeys";
 import { useFlightControls } from "./hooks/useFlightControls";
+import { getYawDisplay } from "./utils/yawUtils";
 
 const technologies = ["React", "WebGL", "Typescript"];
 const controls = [
@@ -14,29 +15,44 @@ const controls = [
   { key: "Space", action: "Pause" },
 ];
 
-function App() {
+const App = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const keysPressedRef = useKeys();
-  const { angle, scale, moveSpeed } = useFlightControls(keysPressedRef);
   const { rendererRef } = useWebGL(canvasRef);
-
-  useEffect(() => {
-    if (rendererRef.current)
-      rendererRef.current.updateState({ angle, scale, moveSpeed });
-  }, [angle, scale, moveSpeed, rendererRef]);
+  const { angle, scale, moveSpeed } = useFlightControls(
+    keysPressedRef,
+    rendererRef.current!
+  );
 
   const infos = [
     { key: "Speed", value: (moveSpeed * 3500000).toFixed(0), symbol: "Knots" },
     {
       key: "Elevation",
-      value: ((scale - 0.009) * 17730496).toFixed(0),
+      value: ((scale - 0.009) * 177304).toFixed(0),
       symbol: "Feet",
     },
-    { key: "Yaw", value: angle.toFixed(2) },
+    {
+      key: "Yaw",
+      value: getYawDisplay(angle),
+    },
   ];
 
+  const handleKeyPress = (event: KeyboardEvent) => {
+    if (event.code === "Space") {
+      if (rendererRef.current)
+        rendererRef.current.paused = !rendererRef.current?.paused;
+    }
+  };
+
+  useEffect(() => {
+    window.addEventListener("keydown", handleKeyPress);
+    return () => {
+      window.removeEventListener("keydown", handleKeyPress);
+    };
+  }, []);
+
   return (
-    <div style={{ transform: "scale(0.7)" }}>
+    <div style={{ transform: "scale(0.8)" }}>
       <div className="subtitle">
         <p>Built with</p>
         {technologies.map((tech, index) => (
@@ -71,6 +87,6 @@ function App() {
       </CenteredColumn>
     </div>
   );
-}
+};
 
 export default App;
