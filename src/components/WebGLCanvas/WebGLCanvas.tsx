@@ -1,13 +1,10 @@
-import React, { useRef } from "react";
-import { useWebGL } from "../../hooks";
+import React from "react";
 
-const WebGLCanvas: React.FC = () => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  useWebGL(canvasRef);
-
-  return (
-      <canvas ref={canvasRef} width="800px" height="800px"></canvas>
-  );
+interface WebGLCanvasProps {
+  canvasRef: React.RefObject<HTMLCanvasElement>;
+}
+const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ canvasRef }) => {
+  return <canvas ref={canvasRef} width="800px" height="800px"></canvas>;
 };
 
 export default WebGLCanvas;
