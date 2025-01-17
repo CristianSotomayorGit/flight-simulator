@@ -28,8 +28,8 @@ export const useWebGL = (canvasRef: React.RefObject<HTMLCanvasElement>) => {
           colorFrag,
           lineVert,
           lineFrag,
-          "/map.jpg",
-          "/plane.png"
+          "map.jpg",
+          "plane.png"
         );
         setLoad(!didLoad);
       } catch (error) {
