@@ -4,6 +4,7 @@ export class Renderer {
 
   private mainProgram: WebGLProgram | null = null;
   private colorProgram: WebGLProgram | null = null;
+  private lineProgram: WebGLProgram | null = null;
 
   private main_a_positionLoc!: GLint;
   private main_a_texCoordLoc!: GLint;
@@ -16,6 +17,9 @@ export class Renderer {
   private color_a_positionLoc!: GLint;
   private color_u_colorLoc!: WebGLUniformLocation | null;
 
+  private line_a_positionLoc!: GLint;
+  private line_a_colorLoc!: GLint;
+
   private positionBuffer!: WebGLBuffer | null;
   private texCoordBuffer!: WebGLBuffer | null;
   private planePosBuffer!: WebGLBuffer | null;
@@ -23,6 +27,8 @@ export class Renderer {
   private crossBuffer!: WebGLBuffer | null;
   private checkpointBuffer!: WebGLBuffer | null;
   private edgeArrowBuffer!: WebGLBuffer | null;
+  private lineBuffer!: WebGLBuffer | null;
+  private lineColorBuffer!: WebGLBuffer | null;
 
   private mapTexture!: WebGLTexture | null;
   private planeTexture!: WebGLTexture | null;
@@ -74,6 +80,7 @@ export class Renderer {
   ];
 
   private currCheckpoint: [number, number] | null = null;
+  private pathPoints: Array<{ u: number; v: number; speed: number }> = [];
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -153,9 +160,26 @@ export class Renderer {
           gl_FragColor = v_color;
         }
       `;
+    const lineVertSrc = `
+      attribute vec2 a_position;
+      attribute vec4 a_color;
+      varying vec4 v_color;
+      void main() {
+        gl_Position = vec4(a_position, 0.0, 1.0);
+        v_color = a_color;
+      }
+    `;
+    const lineFragSrc = `
+      precision mediump float;
+      varying vec4 v_color;
+      void main() {
+        gl_FragColor = v_color;
+      }
+    `;
 
     this.mainProgram = this.createProgram(this.gl, mainVertSrc, mainFragSrc);
     this.colorProgram = this.createProgram(this.gl, colorVertSrc, colorFragSrc);
+    this.lineProgram = this.createProgram(this.gl, lineVertSrc, lineFragSrc);
 
     this.gl.useProgram(this.mainProgram);
     this.main_a_positionLoc = this.gl.getAttribLocation(
@@ -261,6 +285,12 @@ export class Renderer {
       new Uint8Array([0, 255, 255, 255])
     );
 
+    this.gl.useProgram(this.lineProgram);
+    this.line_a_positionLoc = this.gl.getAttribLocation(this.lineProgram!, "a_position");
+    this.line_a_colorLoc = this.gl.getAttribLocation(this.lineProgram!, "a_color");
+    this.lineBuffer = this.gl.createBuffer();
+    this.lineColorBuffer = this.gl.createBuffer();
+
     await this.loadTextures();
   }
 
@@ -274,6 +304,10 @@ export class Renderer {
 
   private render() {
     if (!this.gl) return;
+
+    const worldX = 0.5 + this.offsetX;
+    const worldY = 0.5 + this.offsetY;
+    this.pathPoints.push({ u: worldX, v: worldY, speed: this.moveSpeed });
 
     if (this.takeOffCounter < 2000) {
       this.moveSpeed += 0.0001 / 2000;
@@ -291,6 +325,7 @@ export class Renderer {
     this.offsetY += Math.cos(this.angle) * this.moveSpeed;
 
     this.drawMapView();
+    this.drawPath();
     this.drawPlane();
 
     if (this.currCheckpoint) {
@@ -710,7 +745,7 @@ export class Renderer {
       };
 
       const planeImage = new Image();
-      planeImage.src = "plane.png";
+      planeImage.src = "plane2.png";
       planeImage.onload = () => {
         if (this.gl && this.planeTexture) {
           this.gl.bindTexture(this.gl.TEXTURE_2D, this.planeTexture);
@@ -747,5 +782,69 @@ export class Renderer {
         if (imagesLoaded === 2) resolve();
       };
     });
+  }
+
+  private getSpeedColor(speed: number): [number, number, number, number] {
+    const stops = [0, 0.0003, 0.0009, 0.0012];
+    const colors = [
+      [0, 0, 1],
+      [0, 1, 0],
+      [1, 1, 0],
+      [1, 0, 0]
+    ];
+    if (speed <= stops[0]) return [colors[0][0], colors[0][1], colors[0][2], 1];
+    for (let i = 1; i < stops.length; i++) {
+      if (speed <= stops[i]) {
+        const t = (speed - stops[i - 1]) / (stops[i] - stops[i - 1]);
+        const col = [
+          colors[i - 1][0] * (1 - t) + colors[i][0] * t,
+          colors[i - 1][1] * (1 - t) + colors[i][1] * t,
+          colors[i - 1][2] * (1 - t) + colors[i][2] * t
+        ];
+        return [col[0], col[1], col[2], 1];
+      }
+    }
+    const last = colors[colors.length - 1];
+    return [last[0], last[1], last[2], 1];
+  }
+  
+
+  private drawPath() {
+    if (!this.gl || !this.lineProgram) return;
+  
+    const gl = this.gl;
+    const len = this.pathPoints.length;
+    if (len < 2) return;
+  
+    const posArray = new Float32Array(len * 2);
+    const colArray = new Float32Array(len * 4);
+  
+    for (let i = 0; i < len; i++) {
+      const pt = this.pathPoints[i];
+      const { sx, sy } = this.computeClipSpace(pt.u, pt.v);
+      posArray[i * 2] = sx;
+      posArray[i * 2 + 1] = sy;
+  
+      const color = this.getSpeedColor(pt.speed);
+      colArray[i * 4 + 0] = color[0];
+      colArray[i * 4 + 1] = color[1];
+      colArray[i * 4 + 2] = color[2];
+      colArray[i * 4 + 3] = color[3];
+    }
+  
+    gl.useProgram(this.lineProgram);
+    gl.lineWidth(5);
+  
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.lineBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, posArray, gl.DYNAMIC_DRAW);
+    gl.enableVertexAttribArray(this.line_a_positionLoc);
+    gl.vertexAttribPointer(this.line_a_positionLoc, 2, gl.FLOAT, false, 0, 0);
+  
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.lineColorBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, colArray, gl.DYNAMIC_DRAW);
+    gl.enableVertexAttribArray(this.line_a_colorLoc);
+    gl.vertexAttribPointer(this.line_a_colorLoc, 4, gl.FLOAT, false, 0, 0);
+  
+    gl.drawArrays(gl.LINE_STRIP, 0, len);
   }
 }
