@@ -1,15 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 
-export const useKeyPress = (): Record<string, boolean> => {
-  const [keysPressed, setKeysPressed] = useState<Record<string, boolean>>({});
+export const useKeys = () => {
+  const keysPressedRef = useRef(new Set<string>());
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      setKeysPressed((prev) => ({ ...prev, [event.key]: true }));
+      keysPressedRef.current.add(event.key);
     };
 
     const handleKeyUp = (event: KeyboardEvent) => {
-      setKeysPressed((prev) => ({ ...prev, [event.key]: false }));
+      keysPressedRef.current.delete(event.key);
     };
 
     window.addEventListener("keydown", handleKeyDown);
@@ -21,5 +21,5 @@ export const useKeyPress = (): Record<string, boolean> => {
     };
   }, []);
 
-  return keysPressed;
+  return keysPressedRef;
 };
