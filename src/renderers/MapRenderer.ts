@@ -51,5 +51,83 @@ export class MapRenderer {
       gl.uniform1i(this.uTexture, 0);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
     }
+
+    drawSquare(
+      colorProgram: WebGLProgram,
+      checkpointBuffer: WebGLBuffer,
+      x: number,
+      y: number,
+      size: number,
+      color: [number, number, number, number]
+    ) {
+      if (!this.gl || !colorProgram || !checkpointBuffer) return;
+      const gl = this.gl;
+      gl.useProgram(colorProgram);
+      gl.bindBuffer(gl.ARRAY_BUFFER, checkpointBuffer);
+      const half = size / 2;
+      const verts = new Float32Array([
+        x - half,
+        y - half,
+        x + half,
+        y - half,
+        x - half,
+        y + half,
+        x - half,
+        y + half,
+        x + half,
+        y - half,
+        x + half,
+        y + half,
+      ]);
+      gl.bufferData(gl.ARRAY_BUFFER, verts, gl.DYNAMIC_DRAW);
+      const aPos = gl.getAttribLocation(colorProgram, "a_position");
+      gl.enableVertexAttribArray(aPos);
+      gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+      const uColor = gl.getUniformLocation(colorProgram, "u_color");
+      gl.uniform4f(uColor, color[0], color[1], color[2], color[3]);
+      gl.drawArrays(gl.TRIANGLES, 0, 6);
+    }
+  
+    drawArrowTowards(
+      colorProgram: WebGLProgram,
+      edgeArrowBuffer: WebGLBuffer,
+      x: number,
+      y: number,
+      color: [number, number, number, number]
+    ) {
+      if (!this.gl || !colorProgram || !edgeArrowBuffer) return;
+      const gl = this.gl;
+      gl.useProgram(colorProgram);
+      gl.bindBuffer(gl.ARRAY_BUFFER, edgeArrowBuffer);
+      const m = Math.max(Math.abs(x), Math.abs(y));
+      if (m < 0.00001) return;
+      const t = 1 / m;
+      const tipX = x * t;
+      const tipY = y * t;
+      const arrowSize = 0.05;
+      const halfBase = arrowSize / 2;
+      const angle = Math.atan2(tipY, tipX);
+      const baseX = tipX - arrowSize * Math.cos(angle);
+      const baseY = tipY - arrowSize * Math.sin(angle);
+      const leftX = baseX + halfBase * Math.sin(angle);
+      const leftY = baseY - halfBase * Math.cos(angle);
+      const rightX = baseX - halfBase * Math.sin(angle);
+      const rightY = baseY + halfBase * Math.cos(angle);
+      const arrowVerts = new Float32Array([
+        tipX,
+        tipY,
+        leftX,
+        leftY,
+        rightX,
+        rightY,
+      ]);
+      gl.bufferData(gl.ARRAY_BUFFER, arrowVerts, gl.DYNAMIC_DRAW);
+      const aPos = gl.getAttribLocation(colorProgram, "a_position");
+      gl.enableVertexAttribArray(aPos);
+      gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+      const uColor = gl.getUniformLocation(colorProgram, "u_color");
+      gl.uniform4f(uColor, color[0], color[1], color[2], color[3]);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+    }
   }
   
