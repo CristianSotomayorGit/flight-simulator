@@ -2,11 +2,9 @@ export class Renderer {
   private canvas: HTMLCanvasElement;
   private gl!: WebGLRenderingContext | null;
 
-  // Shaders & Programs
   private mainProgram: WebGLProgram | null = null;
   private colorProgram: WebGLProgram | null = null;
 
-  // Attribute & Uniform Locations (Main Program)
   private main_a_positionLoc!: GLint;
   private main_a_texCoordLoc!: GLint;
   private main_u_angleLoc!: WebGLUniformLocation | null;
@@ -15,11 +13,9 @@ export class Renderer {
   private main_u_textureLoc!: WebGLUniformLocation | null;
   private main_u_grayscaleLoc!: WebGLUniformLocation | null;
 
-  // Attribute & Uniform Locations (Color Program)
   private color_a_positionLoc!: GLint;
   private color_u_colorLoc!: WebGLUniformLocation | null;
 
-  // Buffers
   private positionBuffer!: WebGLBuffer | null;
   private texCoordBuffer!: WebGLBuffer | null;
   private planePosBuffer!: WebGLBuffer | null;
@@ -28,25 +24,22 @@ export class Renderer {
   private checkpointBuffer!: WebGLBuffer | null;
   private edgeArrowBuffer!: WebGLBuffer | null;
 
-  // Textures
   private mapTexture!: WebGLTexture | null;
   private planeTexture!: WebGLTexture | null;
 
-  // State
-  private angle = 2.23;
-  private scale = 0.009;
-  private offsetX = 0.229;
-  private offsetY = 0.31117;
-  private rotateStep = 0.005;
-  private moveSpeed = 0.0;
+  public angle = 2.23;
+  public scale = 0.009;
+  public offsetX = 0.229;
+  public offsetY = 0.31117;
+  public rotateStep = 0.005;
+  public moveSpeed = 0.0;
+
   private takeOffCounter = 0;
-  private keysPressed: Record<string, boolean> = {};
 
   private positions = new Float32Array([
     -1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1,
   ]);
   private texCoords = new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1]);
-
   private planePositions = new Float32Array([
     -0.1, -0.1, 0.1, -0.1, -0.1, 0.1, -0.1, 0.1, 0.1, -0.1, 0.1, 0.1,
   ]);
@@ -54,7 +47,6 @@ export class Renderer {
     0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1,
   ]);
 
-  // Checkpoints
   private checkpoints: Array<[number, number]> = [
     [0.505, 0.297],
     [0.417, 0.291],
@@ -93,10 +85,13 @@ export class Renderer {
     this.startRendering();
   }
 
-  public dispose() {
-    // Here you can clean up resources if needed
-    // Remove event listeners, delete buffers/textures, etc.
+  public updateState({ angle, scale, moveSpeed }: { angle?: number; scale?: number; moveSpeed?: number }) {
+    if (angle !== undefined) this.angle = angle;
+    if (scale !== undefined) this.scale = scale;
+    if (moveSpeed !== undefined) this.moveSpeed = moveSpeed;
   }
+
+  public dispose() {}
 
   private async initializeWebGl() {
     this.gl = this.canvas.getContext("webgl", { alpha: true });
@@ -104,16 +99,9 @@ export class Renderer {
       alert("WebGL not supported");
       return;
     }
-
-    // const gl = this.gl;
     this.gl.enable(this.gl.BLEND);
     this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
 
-    // Event listeners for key input
-    window.addEventListener("keydown", (e) => (this.keysPressed[e.key] = true));
-    window.addEventListener("keyup", (e) => (this.keysPressed[e.key] = false));
-
-    // Compile and link shaders
     const mainVertSrc = `
         attribute vec2 a_position;
         attribute vec2 a_texCoord;
@@ -141,7 +129,7 @@ export class Renderer {
         uniform bool u_grayscale;
         void main() {
           vec4 col = texture2D(u_texture, v_texCoord);
-          if(u_grayscale){
+          if (u_grayscale) {
             float gray = dot(col.rgb, vec3(0.299, 0.587, 0.114));
             gl_FragColor = vec4(gray, gray, gray, col.a);
           } else {
@@ -169,7 +157,6 @@ export class Renderer {
     this.mainProgram = this.createProgram(this.gl, mainVertSrc, mainFragSrc);
     this.colorProgram = this.createProgram(this.gl, colorVertSrc, colorFragSrc);
 
-    // Get attribute/uniform locations
     this.gl.useProgram(this.mainProgram);
     this.main_a_positionLoc = this.gl.getAttribLocation(
       this.mainProgram!,
@@ -200,7 +187,6 @@ export class Renderer {
       "u_grayscale"
     );
 
-    // Create main buffers
     this.positionBuffer = this.gl.createBuffer();
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.positionBuffer);
     this.gl.bufferData(
@@ -233,7 +219,6 @@ export class Renderer {
       this.gl.STATIC_DRAW
     );
 
-    // Color program locations
     this.color_a_positionLoc = this.gl.getAttribLocation(
       this.colorProgram!,
       "a_position"
@@ -243,12 +228,10 @@ export class Renderer {
       "u_color"
     );
 
-    // Buffers for geometry
     this.crossBuffer = this.gl.createBuffer();
     this.checkpointBuffer = this.gl.createBuffer();
     this.edgeArrowBuffer = this.gl.createBuffer();
 
-    // Create placeholder textures
     this.mapTexture = this.gl.createTexture();
     this.gl.bindTexture(this.gl.TEXTURE_2D, this.mapTexture);
     this.gl.texImage2D(
@@ -278,7 +261,6 @@ export class Renderer {
       new Uint8Array([0, 255, 255, 255])
     );
 
-    // Load images
     await this.loadTextures();
   }
 
@@ -308,29 +290,6 @@ export class Renderer {
     this.offsetX -= Math.sin(this.angle) * this.moveSpeed;
     this.offsetY += Math.cos(this.angle) * this.moveSpeed;
 
-    if (this.keysPressed["ArrowLeft"]) {
-      this.angle += this.rotateStep;
-    }
-    if (this.keysPressed["ArrowRight"]) {
-      this.angle -= this.rotateStep;
-    }
-    if (this.keysPressed["ArrowUp"]) {
-      if (this.moveSpeed < 0.0003) {
-        this.moveSpeed += 0.0003 / 300;
-      }
-    }
-    if (this.keysPressed["ArrowDown"]) {
-      if (this.moveSpeed > 0.000005) {
-        this.moveSpeed -= 0.0003 / 300;
-      }
-    }
-    if (this.keysPressed["w"] || this.keysPressed["W"]) {
-      this.scale *= 1.02;
-    }
-    if (this.keysPressed["s"] || this.keysPressed["S"]) {
-      this.scale /= 1.02;
-    }
-
     this.drawMapView();
     this.drawPlane();
 
@@ -349,13 +308,43 @@ export class Renderer {
     this.drawMiniMapCheckpoints();
   }
 
+  private computeClipSpace(u: number, v: number) {
+    const v00 = this.computeCornerTexcoord([0, 0]);
+    const v10 = this.computeCornerTexcoord([1, 0]);
+    const v01 = this.computeCornerTexcoord([0, 1]);
+
+    const A = (v10[0] - v00[0]) / 2;
+    const B = (v01[0] - v00[0]) / 2;
+    const C = v00[0] + A + B;
+    const D = (v10[1] - v00[1]) / 2;
+    const E = (v01[1] - v00[1]) / 2;
+    const F = v00[1] + D + E;
+    const Delta = A * E - B * D;
+
+    const sx = (E * (u - C) - B * (v - F)) / Delta;
+    const sy = (-D * (u - C) + A * (v - F)) / Delta;
+    return { sx, sy };
+  }
+
+  private computeCornerTexcoord(tc: [number, number]) {
+    const centeredX = tc[0] - 0.5;
+    const centeredY = tc[1] - 0.5;
+    const c = Math.cos(this.angle);
+    const s = Math.sin(this.angle);
+    let rotX = c * centeredX - s * centeredY;
+    let rotY = s * centeredX + c * centeredY;
+    rotX *= this.scale;
+    rotY *= this.scale;
+    return [rotX + 0.5 + this.offsetX, rotY + 0.5 + this.offsetY];
+  }
+
   private drawMapView() {
     if (!this.gl || !this.mainProgram) return;
 
-    const dpr = window.devicePixelRatio || 1; // Get device pixel ratio
-    const displayWidth = this.canvas.clientWidth; // CSS width
-    const displayHeight = this.canvas.clientHeight; // CSS height
-  
+    const dpr = window.devicePixelRatio || 1;
+    const displayWidth = this.canvas.clientWidth;
+    const displayHeight = this.canvas.clientHeight;
+
     this.canvas.width = displayWidth * dpr;
     this.canvas.height = displayHeight * dpr;
 
@@ -391,49 +380,6 @@ export class Renderer {
     this.gl.uniform1f(this.main_u_scaleLoc, this.scale);
     this.gl.uniform2f(this.main_u_offsetLoc, this.offsetX, this.offsetY);
     this.gl.uniform1i(this.main_u_grayscaleLoc, 0);
-
-    this.gl.activeTexture(this.gl.TEXTURE0);
-    this.gl.bindTexture(this.gl.TEXTURE_2D, this.mapTexture);
-    this.gl.uniform1i(this.main_u_textureLoc, 0);
-
-    this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
-  }
-
-  private drawMiniMapView() {
-    if (!this.gl || !this.mainProgram) return;
-
-    const miniWidth = 250;
-    const miniHeight = 250;
-    this.gl.viewport(0, 0, miniWidth, miniHeight);
-
-    this.gl.useProgram(this.mainProgram);
-
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.positionBuffer);
-    this.gl.enableVertexAttribArray(this.main_a_positionLoc);
-    this.gl.vertexAttribPointer(
-      this.main_a_positionLoc,
-      2,
-      this.gl.FLOAT,
-      false,
-      0,
-      0
-    );
-
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.texCoordBuffer);
-    this.gl.enableVertexAttribArray(this.main_a_texCoordLoc);
-    this.gl.vertexAttribPointer(
-      this.main_a_texCoordLoc,
-      2,
-      this.gl.FLOAT,
-      false,
-      0,
-      0
-    );
-
-    this.gl.uniform1f(this.main_u_angleLoc, 0.0);
-    this.gl.uniform1f(this.main_u_scaleLoc, 1.0);
-    this.gl.uniform2f(this.main_u_offsetLoc, 0.0, 0.0);
-    this.gl.uniform1i(this.main_u_grayscaleLoc, 1);
 
     this.gl.activeTexture(this.gl.TEXTURE0);
     this.gl.bindTexture(this.gl.TEXTURE_2D, this.mapTexture);
@@ -492,6 +438,49 @@ export class Renderer {
     } else {
       this.drawArrowTowards(sx, sy, [0.0, 1.0, 1.0, 1.0]);
     }
+  }
+
+  private drawMiniMapView() {
+    if (!this.gl || !this.mainProgram) return;
+
+    const miniWidth = 250;
+    const miniHeight = 250;
+    this.gl.viewport(0, 0, miniWidth, miniHeight);
+
+    this.gl.useProgram(this.mainProgram);
+
+    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.positionBuffer);
+    this.gl.enableVertexAttribArray(this.main_a_positionLoc);
+    this.gl.vertexAttribPointer(
+      this.main_a_positionLoc,
+      2,
+      this.gl.FLOAT,
+      false,
+      0,
+      0
+    );
+
+    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.texCoordBuffer);
+    this.gl.enableVertexAttribArray(this.main_a_texCoordLoc);
+    this.gl.vertexAttribPointer(
+      this.main_a_texCoordLoc,
+      2,
+      this.gl.FLOAT,
+      false,
+      0,
+      0
+    );
+
+    this.gl.uniform1f(this.main_u_angleLoc, 0.0);
+    this.gl.uniform1f(this.main_u_scaleLoc, 1.0);
+    this.gl.uniform2f(this.main_u_offsetLoc, 0.0, 0.0);
+    this.gl.uniform1i(this.main_u_grayscaleLoc, 1);
+
+    this.gl.activeTexture(this.gl.TEXTURE0);
+    this.gl.bindTexture(this.gl.TEXTURE_2D, this.mapTexture);
+    this.gl.uniform1i(this.main_u_textureLoc, 0);
+
+    this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
   }
 
   private drawMiniMapPlane() {
@@ -603,18 +592,15 @@ export class Renderer {
     gl.useProgram(this.colorProgram);
     gl.bindBuffer(gl.ARRAY_BUFFER, this.edgeArrowBuffer);
 
-    // Scale (cx, cy) to ensure the arrow tip is on the boundary in clip space [-1..+1].
     const m = Math.max(Math.abs(cx), Math.abs(cy));
-    if (m < 0.00001) return; // Near zero, skip
+    if (m < 0.00001) return;
     const t = 1.0 / m;
     const tipX = cx * t;
     const tipY = cy * t;
 
-    // Arrowhead dimensions
-    const arrowSize = 0.05; // Length of the arrowhead
-    const halfBase = arrowSize / 2; // Half the base width of the arrowhead
+    const arrowSize = 0.05;
+    const halfBase = arrowSize / 2;
 
-    // Calculate the tip and base points
     const angle = Math.atan2(tipY, tipX);
     const baseX = tipX - arrowSize * Math.cos(angle);
     const baseY = tipY - arrowSize * Math.sin(angle);
@@ -639,36 +625,6 @@ export class Renderer {
 
     gl.uniform4f(this.color_u_colorLoc, color[0], color[1], color[2], color[3]);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
-  }
-
-  private computeCornerTexcoord(tc: [number, number]) {
-    const centeredX = tc[0] - 0.5;
-    const centeredY = tc[1] - 0.5;
-    const c = Math.cos(this.angle);
-    const s = Math.sin(this.angle);
-    let rotX = c * centeredX - s * centeredY;
-    let rotY = s * centeredX + c * centeredY;
-    rotX *= this.scale;
-    rotY *= this.scale;
-    return [rotX + 0.5 + this.offsetX, rotY + 0.5 + this.offsetY];
-  }
-
-  private computeClipSpace(u: number, v: number) {
-    const v00 = this.computeCornerTexcoord([0, 0]);
-    const v10 = this.computeCornerTexcoord([1, 0]);
-    const v01 = this.computeCornerTexcoord([0, 1]);
-
-    const A = (v10[0] - v00[0]) / 2;
-    const B = (v01[0] - v00[0]) / 2;
-    const C = v00[0] + A + B;
-    const D = (v10[1] - v00[1]) / 2;
-    const E = (v01[1] - v00[1]) / 2;
-    const F = v00[1] + D + E;
-    const Delta = A * E - B * D;
-
-    const sx = (E * (u - C) - B * (v - F)) / Delta;
-    const sy = (-D * (u - C) + A * (v - F)) / Delta;
-    return { sx, sy };
   }
 
   private computeClipSpaceMinimap(u: number, v: number) {

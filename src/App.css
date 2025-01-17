@@ -67,6 +67,22 @@ canvas {
   max-height: 70px;
 }
 
+.hud {
+  margin: 0;
+  color: white;
+  font-size: 15px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  max-height: 70px;
+}
+
+
 .control {
+  margin: 0 28px;
+}
+
+.info {
   margin: 0 28px;
 }
