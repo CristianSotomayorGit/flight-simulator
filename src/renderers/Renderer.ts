@@ -96,6 +96,7 @@ export class Renderer {
     this.lineProgram = programs.lineProgram;
     if (!this.mainProgram || !this.colorProgram || !this.lineProgram) return;
     this.positionBuffer = this.gl.createBuffer();
+    if (!this.positionBuffer) return;
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.positionBuffer);
     this.gl.bufferData(
       this.gl.ARRAY_BUFFER,
@@ -103,6 +104,7 @@ export class Renderer {
       this.gl.STATIC_DRAW
     );
     this.texCoordBuffer = this.gl.createBuffer();
+    if (!this.texCoordBuffer) return;
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.texCoordBuffer);
     this.gl.bufferData(
       this.gl.ARRAY_BUFFER,
@@ -110,6 +112,7 @@ export class Renderer {
       this.gl.STATIC_DRAW
     );
     this.planePosBuffer = this.gl.createBuffer();
+    if (!this.planePosBuffer) return;
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.planePosBuffer);
     this.gl.bufferData(
       this.gl.ARRAY_BUFFER,
@@ -118,6 +121,7 @@ export class Renderer {
     );
     this.planeTexBuffer = this.gl.createBuffer();
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.planeTexBuffer);
+    if (!this.planeTexBuffer) return;
     this.gl.bufferData(
       this.gl.ARRAY_BUFFER,
       this.planeTexCoords,
@@ -125,9 +129,12 @@ export class Renderer {
     );
     this.crossBuffer = this.gl.createBuffer();
     this.checkpointBuffer = this.gl.createBuffer();
+    if (!this.checkpointBuffer) return;
     this.edgeArrowBuffer = this.gl.createBuffer();
     this.lineBuffer = this.gl.createBuffer();
+    if (!this.lineBuffer) return;
     this.lineColorBuffer = this.gl.createBuffer();
+    if (!this.lineColorBuffer) return;
     this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
     this.mapTexture = this.gl.createTexture();
     this.planeTexture = this.gl.createTexture();
@@ -138,6 +145,7 @@ export class Renderer {
       mapUrl,
       planeUrl
     );
+
     this.mapRenderer = new MapRenderer(
       this.gl,
       this.mainProgram,
