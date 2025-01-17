@@ -1,5 +1,5 @@
 import React from "react";
-import "./Compass.css";
+import styles from "./Compass.module.css";
 
 type CompassProps = {
   angle: number;
@@ -7,13 +7,12 @@ type CompassProps = {
 
 const Compass: React.FC<CompassProps> = ({ angle }) => {
   return (
-    <div className="compass-container">
+    <div className={styles["compass-container"]}>
       <svg
-        className="compass-svg"
+        className={styles["compass-svg"]}
         viewBox="0 0 100 100"
         xmlns="http://www.w3.org/2000/svg"
       >
-        {/* Outer Circle */}
         <circle
           cx="50"
           cy="50"
@@ -22,16 +21,10 @@ const Compass: React.FC<CompassProps> = ({ angle }) => {
           stroke="#ccc"
           strokeWidth="2"
         />
-
-        {/* Needle */}
         <g
-          className="needle"
-          style={{
-            transform: `rotate(${angle}rad)`,
-            transformOrigin: "50% 50%",
-          }}
+          className={styles.needle}
+          style={{ "--angle": `${angle}rad` } as React.CSSProperties}
         >
-          {/* North Label */}
           <text
             x="50"
             y="12"
@@ -42,9 +35,7 @@ const Compass: React.FC<CompassProps> = ({ angle }) => {
           >
             N
           </text>
-          {/* Arrow */}
           <polygon points="50,15 47,50 53,50" fill="red" />
-          {/* Tail */}
           <polygon points="50,85 47,50 53,50" fill="white" />
         </g>
       </svg>
